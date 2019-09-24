@@ -7,6 +7,7 @@ from math import *
 class Map:
     def __init__(self):  # 50个地点的初始化
         self.location = np.random.random(100) * 100  # 产生100个随机数
+        self.location = self.location.reshape(50, 2)
         self.location_x = []
         self.location_y = []
         self.stop = np.random.rand(100) * 10  # 产生停滞系数与停滞时间
@@ -18,12 +19,9 @@ class Map:
             self.pheromone[i][i] = 0  # 清空对角，自己对自己的信息浓度为0
 
     def set_xy(self):
-        for i in range(0, 100):  # 为了后期作图方便，获得坐标的X值和Y值
-            if i % 2 == 0:
-                self.location_x.append(self.location[i])
-            elif i % 2 == 1:
-                self.location_y.append(self.location[i])
-        self.location = self.location.reshape(50, 2)
+        for q in range(0, len(self.location)):
+            self.location_x.append(self.location[q][0])
+            self.location_y.append(self.location[q][1])
 
     def get_x(self):
         return self.location_x
@@ -120,5 +118,6 @@ while iter_times <= iter_max:
     permission = np.linspace(0, 49, num=50, endpoint=True, retstep=False)  # 初始化最初能去的城市
     taboo = []  # 初始化不能去的城市
     for i in range(0, fellows.ph):  # 按照信息素浓度走的蚂鱼
+
 
 
