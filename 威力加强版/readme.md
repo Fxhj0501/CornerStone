@@ -8,6 +8,6 @@
   - rand_gogogo.py 是只有蚂鱼的运算
   - no_rand_antish 是没有随机的蚂鱼的运算，有bug所以捕捉了
 - drawer.py 是matlibplot画的动画
-- 贪心算法极其数据
+- greedy.py 贪心算法
 - UI 未完工
 - 未完待续。。
