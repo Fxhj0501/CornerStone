@@ -7,6 +7,7 @@
   - go_and_cal.py负责了主要的计算，不敢乱动
   - rand_gogogo.py 是只有蚂鱼的运算
   - no_rand_antish 是没有随机的蚂鱼的运算，有bug所以捕捉了
-- pygame模拟
-- 计算UI
+- drawer.py 是matlibplot画的动画
+- 贪心算法极其数据
+- UI 未完工
 - 未完待续。。
