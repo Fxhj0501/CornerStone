@@ -1,151 +1,229 @@
-from tkinter import messagebox
-from tkinter import *
-from tkinter import filedialog
-from tkinter.ttk import Scrollbar, Checkbutton, Label, Button
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, qApp, QMenu, QFileDialog, QSpinBox, QLineEdit, \
+    QPushButton
+from PyQt5.QtWidgets import QWidget, QToolButton, QApplication, QLabel, QMessageBox, QVBoxLayout, QHBoxLayout
+from PyQt5.QtCore import Qt, QSize, QVersionNumber, QT_VERSION_STR
+from PyQt5.QtGui import QIcon, QFont, QPalette, QColor, QBrush, QPixmap, QImage
+import sys
 import os
+import pandas as pd
+
+import drawer
 
 
-class Algorithm_Simulator(Tk):
-    icon_res = []
-    file_name = None
-
+class Example(QMainWindow):
     def __init__(self):
         super().__init__()
-        self._set_window_()
-        self._create_menu_bar_()
-        self._create_shortcut_bar_()
-        self._create_body_()
+        self.file_open = os.getcwd()
+        self.run = QPushButton("运行", self)
+        self.input_1 = QLineEdit(self)
+        self.input_1.setText('100')
+        self.sp3 = QLineEdit(self)
+        self.sp2 = QSpinBox(self)
+        self.sp1 = QSpinBox(self)
+        self.Show = QLabel(self)
+        self.Show2 = QLabel(self)
+        self.Show1 = QLabel(self)
+        self.ShowY = QLabel(self)
+        self.ShowX = QLabel(self)
+        self.title_iter = QLabel('迭代次数', self)
+        self.title_rho = QLabel('信息素挥发', self)
+        self.title_beta = QLabel('客观因子影响', self)
+        self.title_alpha = QLabel('优化系数', self)
+        self.title_para = QLabel('调参处', self)
+        self.title_dev = QLabel('发达系数', self)
+        self.title_x = QLabel('X坐标', self)
+        self.title_y = QLabel('Y坐标', self)
+        self.title_stop = QLabel('停滞量', self)
+        self.InitUI()
+        self.Function()
+        self.setWindowIcon(QIcon('simulator.ico'))
 
-    # set the window configuration
-    def _set_window_(self):
-        self.title("基于混合群智能算法的物流分配系统")
-        scn_width, scn_height = self.maxsize()
-        wm_val = '750x450+%d+%d' % ((scn_width - 750) / 2, (scn_height - 450) / 2)
-        self.geometry(wm_val)  # window size
-        self.iconbitmap("img/simulator.ico")  # icon
-        self.protocol('WM_DELETE_WINDOW', self.exit_simulator)  # exit
+    def InitUI(self):
+        self.setGeometry(300, 80, 700, 630)
+        self.setWindowTitle('基于混合群智能算法的物流分配系统')
+        exitAct = QAction(QIcon('exit.jpg'), '退出(&E)', self)
+        exitAct.setShortcut('Ctrl+Q')
+        exitAct.setStatusTip('退出程序')
+        exitAct.triggered.connect(qApp.quit)
 
-    # create the menu bar
-    def _create_menu_bar_(self):
-        menu_bar = Menu(self)
+        openAct = QAction(QIcon('new.jpg'), '打开(&N)', self)
+        openAct.setShortcut('Ctrl+N')
+        openAct.setStatusTip('新建文件')
+        openAct.triggered.connect(self.open_file)
 
-        # choose excel file bar
-        operate_menu = Menu(menu_bar, tearoff=0)
-        operate_menu.add_command(label='打开文件', accelerator='Ctrl+O', command=self.open_file)
-        operate_menu.add_command(label='运行算法', accelerator='Ctrl+R', command=self.run)
-        operate_menu.add_command(label='导出结果', accelerator='Ctrl+S', command=self.save_file)
-        operate_menu.add_separator()
-        operate_menu.add_command(label='Exit', accelerator='Alt+F4', command=self.exit_simulator)
+        menubar = self.menuBar()
+        fileMenu = menubar.addMenu('文件(&F)')
+        fileMenu.addAction(openAct)
+        fileMenu.addSeparator()
+        fileMenu.addAction(exitAct)
 
-        # relate the label with the menu
-        menu_bar.add_cascade(label='运行选项', menu=operate_menu)
+        openHelp = QAction('关于', self)
+        openHelp.setShortcut('Ctrl+H')
+        openHelp.setStatusTip('打开帮助')
+        openHelp.triggered.connect(self.open_help)
 
-        # about_menu
-        about_menu = Menu(menu_bar, tearoff=0)
-        about_menu.add_command(label='帮助', command=lambda: self.show_messagebox('帮助'))
-        about_menu.add_command(label='关于', command=lambda: self.show_messagebox('关于'))
-        menu_bar.add_cascade(label='关于', menu=about_menu)
+        openTeam = QAction('制作团队', self)
+        openTeam.setShortcut('F11')
+        openTeam.setStatusTip('星火团队')
+        openTeam.triggered.connect(self.open_team)
 
-        self["menu"] = menu_bar  # show
+        aboutMenu = menubar.addMenu('关于(&A)')
+        aboutMenu.addAction(openHelp)
+        aboutMenu.addAction(openTeam)
 
-    def _create_shortcut_bar_(self):
-        shortcut_bar = Frame(self, height=25, bg='#20b2aa')
-        shortcut_bar.pack(fill='x')
+        toolbar = self.addToolBar('工具栏')
+        toolbar.addAction(openAct)
+        toolbar.addAction(exitAct)
+        # self.show()
 
-        # open file shortcut
-        tool_icon = PhotoImage(file='img/open_file.gif')
-        tool_btn = Button(shortcut_bar, image=tool_icon, command=self.shortcut_action('open_file'))
-        tool_btn.pack(side='left')
-        self.icon_res.append(tool_icon)
+    def Function(self):
+        self.title_x.setFont(QFont("Times_New_Romance", 13))
+        # self.title.resize(100, 50)
+        self.title_x.setAlignment(Qt.AlignCenter)
+        self.title_x.move(20, 70)
 
-        # run the algorithm
-        tool_icon = PhotoImage(file='img/find_text.gif')
-        tool_btn = Button(shortcut_bar, image=tool_icon, command=self.shortcut_action('run'))
-        tool_btn.pack(side='left')
-        self.icon_res.append(tool_icon)
+        self.title_y.setFont(QFont("Times_New_Romance", 13))
+        # self.title.resize(100, 50)
+        self.title_y.setAlignment(Qt.AlignCenter)
+        self.title_y.move(100, 70)
 
-        # save the result
-        tool_icon = PhotoImage(file='img/save.gif')
-        tool_btn = Button(shortcut_bar, image=tool_icon, command= self.shortcut_action('save'))
-        tool_btn.pack(side='left')
-        self.icon_res.append(tool_icon)
+        self.title_stop.setFont(QFont("Times_New_Romance", 13))
+        # self.title.resize(100, 50)
+        self.title_stop.setAlignment(Qt.AlignCenter)
+        self.title_stop.move(190, 70)
 
-        # about info
-        tool_icon = PhotoImage(file='img/about.gif')
-        tool_btn = Button(shortcut_bar, image=tool_icon, command=self.shortcut_action('about'))
-        tool_btn.pack(side='left')
-        self.icon_res.append(tool_icon)
+        self.title_dev.setFont(QFont("Times_New_Romance", 13))
+        # self.title.resize(100, 50)
+        # self.title2.setAlignment(Qt.AlignCenter)
+        self.title_dev.move(290, 70)
 
-        # exit
-        tool_icon = PhotoImage(file='img/exit.png')
-        tool_btn = Button(shortcut_bar, image=tool_icon, command=self.shortcut_action('exit'))
-        tool_btn.pack(side='left')
-        self.icon_res.append(tool_icon)
+        self.title_para.setFont(QFont("Times_New_Romance", 13))
+        # self.title.resize(100, 50)
+        # self.title2.setAlignment(Qt.AlignCenter)
+        self.title_para.move(500, 70)
 
-    # the main frame
-    def _create_body_(self):
-        # alpha frame
-        alpha_frame = Frame(self, height=50)
-        alpha_frame.pack()
+        self.title_alpha.setFont(QFont("Times_New_Romance", 13))
+        # self.title.resize(100, 50)
+        # self.title2.setAlignment(Qt.AlignCenter)
+        self.title_alpha.move(400, 130)
 
-        # input the parameter alpha
-        alpha_label = Label(alpha_frame, text='优化系数')
-        alpha_label.pack(side=LEFT, anchor=W)
-        alpha_range = StringVar()
-        alpha_range.set(0)
-        alpha_entry = Spinbox(alpha_frame, textvariable=alpha_range, from_=1, to=10)
-        alpha_entry.pack(side=LEFT, anchor=W)
+        self.title_beta.setFont(QFont("Times_New_Romance", 12))
+        # self.title.resize(100, 50)
+        # self.title2.setAlignment(Qt.AlignCenter)
+        self.title_beta.move(400, 230)
 
-        # empty
-        empty_frame = Frame(self, height=50)
-        empty_frame.pack()
+        self.title_rho.setFont(QFont("Times_New_Romance", 10))
+        self.title_rho.move(400, 330)
 
-        # input the parameter beta
-        beta_frame = Frame(self, height=50)
-        beta_frame.pack()
-        beta_label = Label(beta_frame, text='已知量影响')
-        beta_label.pack(side=LEFT, anchor=W)
-        beta_range = StringVar()
-        beta_range.set(0)
-        beta_entry = Spinbox(beta_frame, textvariable=beta_range, from_=1, to=10)
-        beta_entry.pack(side=LEFT, anchor=W)
+        self.title_iter.setFont(QFont("Times_New_Romance", 13))
+        self.title_iter.move(400, 430)
 
-        empty_frame.pack()
+        self.ShowX.setFont(QFont("Times_New_Romance", 13))
+        self.ShowX.resize(80, 500)
+        self.ShowX.move(20, 100)
+        self.ShowX.setStyleSheet("border: 2px solid break;border-radius:25px")
+        self.ShowX.setAlignment(Qt.AlignCenter)
+        self.ShowX.setWordWrap(True)
 
-        # rho frame
-        rho_frame = Frame(self, height=50)
-        rho_frame.pack()
-        rho_label = Label(rho_frame, text='挥发浓度(默认为0.2)')
-        rho_label.pack(side=LEFT, anchor=W)
-        rho_entry = Entry()
-        rho_entry.pack(side=LEFT, anchor=W)
+        self.ShowY.setFont(QFont("Times_New_Romance", 13))
+        self.ShowY.resize(80, 500)
+        self.ShowY.move(110, 100)
+        self.ShowY.setAlignment(Qt.AlignCenter)
+        self.ShowY.setWordWrap(True)
+        self.ShowY.setStyleSheet("border: 2px solid break;border-radius:25px")
 
+        self.Show1.setFont(QFont("Times_New_Romance", 13))
+        self.Show1.resize(80, 500)
+        self.Show1.move(200, 100)
+        self.Show1.setAlignment(Qt.AlignCenter)
+        self.Show1.setWordWrap(True)
+        self.Show1.setStyleSheet("border: 2px solid break;border-radius:25px")
 
+        self.Show2.setFont(QFont("Times_New_Romance", 13))
+        self.Show2.resize(80, 500)
+        self.Show2.move(290, 100)
+        self.Show2.setAlignment(Qt.AlignCenter)
+        self.Show2.setWordWrap(True)
+        self.Show2.setStyleSheet("border: 2px solid break;border-radius:25px")
 
-        # run button
-        run_button = Button(alpha_frame, text='运行', command=self.run)
+        self.Show.setFont(QFont("Times_New_Romance", 20))
+        self.Show.resize(280, 350)
+        self.Show.move(400, 100)
+        # self.Show.setStyleSheet("border: 2px solid red;border-radius:25px")
 
+        self.sp1.setRange(0, 10)
+        self.sp1.setSingleStep(20)
+        self.sp1.setWrapping(True)
+        self.sp1.setValue(3)
+        self.sp1.move(500, 130)
+        self.sp1.resize(150, 40)
+
+        self.sp2.setRange(0, 10)
+        self.sp2.setSingleStep(20)
+        self.sp2.setWrapping(True)
+        self.sp2.setValue(5)
+        self.sp2.move(500, 230)
+        self.sp2.resize(150, 40)
+
+        self.sp3.move(500, 330)
+        self.sp3.resize(150, 40)
+        self.sp3.setText('0.2')
+        self.sp3.setFont(QFont("Times_New_Romance", 13))
+
+        self.input_1.move(500, 430)
+        self.input_1.resize(150, 40)
+        self.input_1.setFont(QFont("Times_New_Romance", 13))
+
+        self.run.move(440, 500)
+        self.run.setFont(QFont("Times_New_Romance", 40))
+        self.run.resize(200, 100)
+        self.run.clicked.connect(self.Next_start)
+        self.show()
 
     def open_file(self):
-        pass
+        try:
+            self.file_name = QFileDialog.getOpenFileName(self, "打开文件", self.file_open)
+            print(self.file_name[0])
+            data = pd.read_excel(self.file_name[0], header=None)
+            x = list(data[1][2:12])
+            y = list(data[2][2:12])
+            r = list(data[3][2:12])
+            c = list(data[4][2:12])
+            x = str(x)[1:-1].replace(',', '\n\n')
+            y = str(y)[1:-1].replace(',', '\n\n')
+            r = str(r)[1:-1].replace(',', '\n\n')
+            c = str(c)[1:-1].replace(',', '\n\n')
+            self.ShowX.setText(str(x))
+            self.ShowY.setText(str(y))
+            self.Show1.setText(r)
+            self.Show2.setText(c)
+        except:
+            pass
 
-    def run(self):
-        pass
+    def open_help(self):
+        QMessageBox.information(self, '使用帮助', '打开文件选择excel文档，运行开始模拟')
 
-    def save_file(self):
-        pass
+    def open_team(self):
+        QMessageBox.information(self, '制作团队', '指导老师：朱晓庆\n 项目成员：陈宇卿，陈研，陈冰，卓一康')
 
-    def show_messagebox(self, type):
-        pass
-
-    def shortcut_action(self, type):
-        pass
-
-    def exit_simulator(self):
-        if messagebox.askokcancel("退出？", "确定退出吗？"):
-            self.destroy()
+    def Next_start(self):
+        self.close()
+        drawer.run()
+        self.ex = Example()
 
 
-if __name__ == "__main__":
-    app = Algorithm_Simulator()
-    app.mainloop()
+if __name__ == '__main__':
+    v_compare = QVersionNumber(5, 6, 0)
+    v_current, _ = QVersionNumber.fromString(QT_VERSION_STR)  # 获取当前Qt版本
+    if QVersionNumber.compare(v_current, v_compare) >= 0:
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)  # Qt从5.6.0开始，支持High-DPI
+        app = QApplication(sys.argv)
+    else:
+        app = QApplication(sys.argv)
+        font = QFont("宋体")
+        pointsize = font.pointSize()
+        font.setPixelSize(pointsize * 90 / 72)
+        app.setFont(font)
+    ex = Example()
+    sys.exit(app.exec_())
